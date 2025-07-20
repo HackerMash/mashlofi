@@ -1,0 +1,93 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lofi Chatrooms</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+  <div id="login" class="flex items-center justify-center h-screen">
+    <div class="bg-gray-800 p-8 rounded-xl shadow-xl text-center w-full max-w-md">
+      <h1 class="text-3xl font-bold mb-4">🎵 Lofi Chatrooms</h1>
+      <p class="mb-6">Connect with like-minded people while enjoying chill beats</p>
+      <input id="username" type="text" placeholder="Enter your username..." class="w-full p-3 rounded bg-gray-700 text-white mb-4">
+      <button onclick="enterChat()" class="w-full bg-purple-600 hover:bg-purple-700 py-2 rounded font-semibold">Enter Chatrooms</button>
+    </div>
+  </div>
+
+  <!-- chatroom.html -->
+  <div id="chatroom" class="hidden h-screen flex">
+    <div class="w-1/4 bg-gray-800 p-4 flex flex-col">
+      <h2 class="text-xl font-semibold mb-4">Rooms</h2>
+      <ul class="space-y-2">
+        <li><button onclick="joinRoom('General Lofi')" class="w-full text-left bg-gray-700 p-2 rounded hover:bg-purple-600">🎵 General Lofi</button></li>
+        <li><button onclick="joinRoom('Study & Work')" class="w-full text-left bg-gray-700 p-2 rounded hover:bg-purple-600">💻 Study & Work</button></li>
+        <li><button onclick="joinRoom('Creative Minds')" class="w-full text-left bg-gray-700 p-2 rounded hover:bg-purple-600">🎨 Creative Minds</button></li>
+        <li><button onclick="joinRoom('Late Night Vibes')" class="w-full text-left bg-gray-700 p-2 rounded hover:bg-purple-600">🌙 Late Night Vibes</button></li>
+      </ul>
+    </div>
+    <div class="flex-1 flex flex-col">
+      <div class="bg-gray-800 p-4 flex justify-between items-center">
+        <span id="room-name">General Lofi</span>
+        <audio id="lofiPlayer" autoplay loop class="ml-auto">
+          <source src="https://cdn.pixabay.com/audio/2022/10/23/audio_e8c69ba68e.mp3" type="audio/mp3">
+        </audio>
+        <button onclick="toggleMusic()" class="ml-4 bg-purple-600 px-3 py-1 rounded">Pause Music</button>
+      </div>
+      <div id="messages" class="flex-1 p-4 overflow-y-auto space-y-2 bg-gray-900"></div>
+      <div class="p-4 bg-gray-800 flex">
+        <input id="messageInput" class="flex-1 p-2 rounded bg-gray-700" placeholder="Type your message...">
+        <button onclick="sendMessage()" class="ml-2 px-4 py-2 bg-purple-600 rounded">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const socket = io();
+    let currentRoom = "General Lofi";
+
+    function enterChat() {
+      const username = document.getElementById('username').value;
+      if (!username) return alert('Please enter a username.');
+      localStorage.setItem('username', username);
+      document.getElementById('login').classList.add('hidden');
+      document.getElementById('chatroom').classList.remove('hidden');
+      joinRoom(currentRoom);
+    }
+
+    function joinRoom(room) {
+      currentRoom = room;
+      document.getElementById('room-name').textContent = room;
+      document.getElementById('messages').innerHTML = '';
+      socket.emit("joinRoom", { username: localStorage.getItem('username'), room });
+    }
+
+    function sendMessage() {
+      const msg = document.getElementById("messageInput").value;
+      if (!msg) return;
+      socket.emit("chatMessage", msg);
+      document.getElementById("messageInput").value = "";
+    }
+
+    socket.on("message", data => {
+      const msgElem = document.createElement("div");
+      msgElem.innerHTML = `<strong>${data.username}</strong>: ${data.text}`;
+      document.getElementById("messages").appendChild(msgElem);
+    });
+
+    function toggleMusic() {
+      const audio = document.getElementById('lofiPlayer');
+      if (audio.paused) {
+        audio.play();
+        event.target.textContent = 'Pause Music';
+      } else {
+        audio.pause();
+        event.target.textContent = 'Play Music';
+      }
+    }
+  </script>
+</body>
+</html>
